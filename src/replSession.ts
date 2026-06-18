@@ -15,8 +15,8 @@ Base.display_size() = (24, 200)
 ENV["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
 
 # Helper the extension uses to detect missing packages
+import Pkg
 function __sciml_pkg_status__(pkgs)
-    import Pkg
     installed = keys(Pkg.project().dependencies)
     for pkg in pkgs
         if !(pkg in installed)
@@ -156,12 +156,23 @@ export class ReplSession {
       this.currentResolve = undefined;
     }, timeoutMs);
 
-    // Wrap in try/catch so errors surface via the sentinel mechanism
+    // @eval Main ensures variables defined in the block persist in Main scope.
+    // A bare try/catch wrapper creates a local scope in Julia, so variables
+    // would be invisible to subsequent blocks — @eval Main avoids that.
+    const escaped = code.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const wrapped = `
-try
-${code}
-catch __sciml_err__
-  println(stderr, "ERROR: ", sprint(showerror, __sciml_err__))
+let __sciml_expr__ = Meta.parseall("""
+${escaped}
+""")
+  local __sciml_err__ = nothing
+  try
+    Core.eval(Main, __sciml_expr__)
+  catch __e__
+    __sciml_err__ = __e__
+  end
+  if __sciml_err__ !== nothing
+    println(stderr, "ERROR: ", sprint(showerror, __sciml_err__))
+  end
 end
 println("${this.currentSentinel}")
 flush(stdout)
