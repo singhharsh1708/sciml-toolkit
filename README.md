@@ -23,6 +23,31 @@ Wraps the current cell in `BenchmarkTools.@benchmark` and opens a side panel wit
 u = rand(1000); sort(u)    # ▶ median 12.34 μs  allocs 1
 ```
 
+### Variable Inspector — auto-opens after every Run Block
+After every block execution, a side panel pops open showing all live variables in `Main` — name, type, size, and a value preview. No extra command needed.
+
+| Name | Type | Size | Value |
+|---|---|---|---|
+| `sol` | `ODESolution` | `scalar` | `retcode: Success` |
+| `u0` | `Vector{Float64}` | `(3,)` | `[1.0, 0.0, 0.0]` |
+
+### Plot Viewer — auto-opens on plot output
+If your block calls `plot(...)` via **Plots.jl** or **CairoMakie**, the output PNG is captured and displayed in a side panel automatically. Re-run the block to refresh it.
+
+### SciML Snippets
+Type a prefix and press `Tab` to expand full boilerplate:
+
+| Prefix | Expands to |
+|---|---|
+| `ode` | `ODEProblem` + `solve` with Tsit5 |
+| `sde` | `SDEProblem` with drift + diffusion |
+| `mtk` | `ModelingToolkit` `@variables` + `@equations` system |
+| `neural_ode` | NeuralODE with Lux.jl |
+| `bvp` | `BVProblem` with boundary conditions |
+| `optim` | `OptimizationProblem` with Optim.jl |
+| `pinn` | Physics-Informed NN via NeuralPDE.jl |
+| `diffeq` | Full define → solve → plot workflow |
+
 ### Equation Preview — `Ctrl+Shift+M`
 Opens a live-updating side panel that renders all LaTeX math found in the file using [KaTeX](https://katex.org). Supports all three SciML/Documenter.jl formats:
 
