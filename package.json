@@ -61,16 +61,19 @@
       {
         "command": "sciml.runBlock",
         "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
         "when": "resourceLangId == julia"
       },
       {
         "command": "sciml.runBenchmark",
-        "key": "ctrl+shift+b",
+        "key": "ctrl+shift+alt+b",
+        "mac": "cmd+shift+alt+b",
         "when": "resourceLangId == julia"
       },
       {
         "command": "sciml.previewEquations",
         "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
         "when": "resourceLangId == julia"
       }
     ],
@@ -98,7 +101,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package",
+    "package": "npx @vscode/vsce package --no-dependencies",
     "lint": "eslint src"
   },
   "devDependencies": {

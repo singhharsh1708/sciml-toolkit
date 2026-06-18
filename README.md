@@ -40,14 +40,14 @@ Opens a live-updating side panel that renders all LaTeX math found in the file u
 
 ## Keyboard Shortcuts
 
-| Action | Shortcut |
-|---|---|
-| Run current block | `Ctrl+Shift+Enter` |
-| Benchmark current block | `Ctrl+Shift+B` |
-| Preview equations | `Ctrl+Shift+M` |
-| Clear all inline outputs | Command Palette → *SciML: Clear All Outputs* |
+| Action | Windows / Linux | Mac |
+|---|---|---|
+| Run current block | `Ctrl+Shift+Enter` | `Cmd+Shift+Enter` |
+| Benchmark current block | `Ctrl+Shift+Alt+B` | `Cmd+Shift+Alt+B` |
+| Preview equations | `Ctrl+Shift+M` | `Cmd+Shift+M` |
+| Clear all inline outputs | Command Palette → *SciML: Clear All Outputs* | same |
 
-> **Mac users:** replace `Ctrl` with `Cmd`.
+> All commands are only active when a `.jl` file is open in the editor.
 
 ## Requirements
 
