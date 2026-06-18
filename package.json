@@ -1,0 +1,109 @@
+{
+  "name": "sciml-toolkit",
+  "displayName": "SciML Toolkit",
+  "description": "Julia SciML toolkit: equation preview, inline code execution, and benchmark runner",
+  "version": "0.1.0",
+  "publisher": "harsh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harshsingh-io/sciml-toolkit"
+  },
+  "homepage": "https://github.com/harshsingh-io/sciml-toolkit#readme",
+  "bugs": { "url": "https://github.com/harshsingh-io/sciml-toolkit/issues" },
+  "keywords": ["julia", "sciml", "differential equations", "benchmarks", "latex", "math"],
+  "engines": { "vscode": "^1.95.0" },
+  "categories": ["Other", "Notebooks", "Visualization"],
+  "activationEvents": ["onLanguage:julia"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sciml.runBlock",
+        "title": "SciML: Run Julia Block",
+        "icon": "$(play)"
+      },
+      {
+        "command": "sciml.runBenchmark",
+        "title": "SciML: Run @benchmark",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "sciml.previewEquations",
+        "title": "SciML: Preview Equations",
+        "icon": "$(symbol-math)"
+      },
+      {
+        "command": "sciml.clearOutputs",
+        "title": "SciML: Clear All Outputs"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "sciml.runBlock",
+          "when": "resourceLangId == julia",
+          "group": "sciml@1"
+        },
+        {
+          "command": "sciml.runBenchmark",
+          "when": "resourceLangId == julia",
+          "group": "sciml@2"
+        },
+        {
+          "command": "sciml.previewEquations",
+          "when": "resourceLangId == julia",
+          "group": "sciml@3"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "sciml.runBlock",
+        "key": "ctrl+shift+enter",
+        "when": "resourceLangId == julia"
+      },
+      {
+        "command": "sciml.runBenchmark",
+        "key": "ctrl+shift+b",
+        "when": "resourceLangId == julia"
+      },
+      {
+        "command": "sciml.previewEquations",
+        "key": "ctrl+shift+m",
+        "when": "resourceLangId == julia"
+      }
+    ],
+    "configuration": {
+      "title": "SciML Toolkit",
+      "properties": {
+        "sciml.juliaPath": {
+          "type": "string",
+          "default": "julia",
+          "description": "Path to the Julia executable"
+        },
+        "sciml.startupTimeout": {
+          "type": "number",
+          "default": 30,
+          "description": "Seconds to wait for Julia to start"
+        },
+        "sciml.useExistingRepl": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send code to the active julia-vscode REPL instead of spawning a separate process"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.95.0",
+    "typescript": "^5.3.0"
+  }
+}
