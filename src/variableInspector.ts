@@ -15,6 +15,13 @@ export class VariableInspector {
   private constructor(panel: vscode.WebviewPanel) {
     this.panel = panel;
     panel.onDidDispose(() => { VariableInspector.current = undefined; });
+
+    // Handle "Plot solution" button clicks from the WebView
+    panel.webview.onDidReceiveMessage((msg: { command: string; varName?: string }) => {
+      if (msg.command === 'plotSolution' && msg.varName) {
+        void vscode.commands.executeCommand('sciml.plotVariable', msg.varName);
+      }
+    });
   }
 
   static show(context: vscode.ExtensionContext, vars: Variable[]) {
@@ -82,6 +89,16 @@ export function parseVariables(raw: string): Variable[] {
 
 // ─── WebView ──────────────────────────────────────────────────────────────────
 
+// Types that warrant a "Plot" action button
+const PLOTTABLE_TYPES = [
+  'ODESolution', 'SDESolution', 'RODESolution', 'DAESolution',
+  'BVPSolution', 'OptimizationSolution', 'EnsembleSolution',
+];
+
+function isPlottable(type: string): boolean {
+  return PLOTTABLE_TYPES.some((t) => type.includes(t));
+}
+
 function buildHtml(vars: Variable[], nonce: string, cspSource: string): string {
   const rows = vars.length
     ? vars.map((v) => /* html */`
@@ -90,8 +107,13 @@ function buildHtml(vars: Variable[], nonce: string, cspSource: string): string {
         <td class="type">${escHtml(v.type)}</td>
         <td class="size">${escHtml(v.size)}</td>
         <td class="preview">${escHtml(v.preview)}</td>
+        <td class="action">
+          ${isPlottable(v.type)
+            ? `<button class="plot-btn" data-var="${escHtml(v.name)}" title="Plot solution">📈</button>`
+            : ''}
+        </td>
       </tr>`).join('')
-    : `<tr><td colspan="4" class="empty">No variables — run a block first.</td></tr>`;
+    : `<tr><td colspan="5" class="empty">No variables — run a block first.</td></tr>`;
 
   return /* html */`<!DOCTYPE html>
 <html lang="en">
@@ -99,7 +121,9 @@ function buildHtml(vars: Variable[], nonce: string, cspSource: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'none'; style-src ${cspSource} 'unsafe-inline';">
+    content="default-src 'none';
+             style-src ${cspSource} 'unsafe-inline';
+             script-src 'nonce-${nonce}';">
   <title>SciML Variables</title>
   <style>
     body { font-family: var(--vscode-font-family); color: var(--vscode-foreground);
@@ -112,6 +136,10 @@ function buildHtml(vars: Variable[], nonce: string, cspSource: string): string {
     td { padding: 5px 8px; border-bottom: 1px solid var(--vscode-widget-border);
          vertical-align: top; }
     tr:hover td { background: var(--vscode-list-hoverBackground); }
+    .action { width: 28px; text-align: center; }
+    .plot-btn { background: none; border: none; cursor: pointer; font-size: 1em;
+                padding: 0; opacity: 0.7; }
+    .plot-btn:hover { opacity: 1; }
     .name { font-family: var(--vscode-editor-font-family); font-weight: 600; color: #4f8cff; white-space: nowrap; }
     .type { font-family: var(--vscode-editor-font-family); color: #73c991; white-space: nowrap; font-size: 0.85em; }
     .size { color: var(--vscode-descriptionForeground); white-space: nowrap; font-size: 0.85em; }
@@ -124,9 +152,17 @@ function buildHtml(vars: Variable[], nonce: string, cspSource: string): string {
 <body>
   <h2>Variables (${vars.length})</h2>
   <table>
-    <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Value</th></tr></thead>
+    <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Value</th><th></th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  <script nonce="${nonce}">
+    const vscode = acquireVsCodeApi();
+    document.querySelectorAll('.plot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        vscode.postMessage({ command: 'plotSolution', varName: btn.dataset.var });
+      });
+    });
+  </script>
 </body>
 </html>`;
 }

@@ -2,7 +2,7 @@
   "name": "sciml-toolkit",
   "displayName": "SciML Toolkit",
   "description": "Julia SciML toolkit: inline execution, variable inspector, plot viewer, benchmarks, equation preview, and snippets",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "harsh",
   "license": "MIT",
   "repository": {
@@ -41,6 +41,11 @@
         "command": "sciml.showVariables",
         "title": "SciML: Show Variable Inspector",
         "icon": "$(table)"
+      },
+      {
+        "command": "sciml.restartRepl",
+        "title": "SciML: Restart Julia Session",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {

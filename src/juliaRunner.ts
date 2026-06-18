@@ -3,6 +3,7 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import { BenchmarkPanel, buildBenchmarkScript, parseBenchmarkOutput } from './benchmarkPanel';
 import { VariableInspector, VAR_INSPECT_SUFFIX, parseVariables } from './variableInspector';
 import { PlotViewer, buildPlotSuffix, tempPlotPath, parsePlotPath } from './plotViewer';
+import { ReplSession } from './replSession';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ export class JuliaRunner {
   private outputDec: vscode.TextEditorDecorationType;
   private errorDec: vscode.TextEditorDecorationType;
   private runningDec: vscode.TextEditorDecorationType;
+  readonly session: ReplSession = new ReplSession();
 
   constructor() {
     this.outputDec = vscode.window.createTextEditorDecorationType({
@@ -74,29 +76,26 @@ export class JuliaRunner {
     this.setRunning(editor, endLine);
     try {
       const plotPath = tempPlotPath();
-      // Append variable inspector + plot capture suffixes
       const fullCode = code + '\n' + VAR_INSPECT_SUFFIX + '\n' + buildPlotSuffix(plotPath);
-
-      const config = vscode.workspace.getConfiguration('sciml');
-      const useRepl: boolean = config.get('useExistingRepl') ?? true;
       let output: string;
 
-      if (useRepl && (await this.juliaVscodeReplAvailable())) {
-        output = await this.runViaRepl(fullCode);
+      // Prefer the persistent REPL session (instant — no startup cost).
+      // Fall back to one-shot subprocess if session isn't ready yet.
+      if (this.session.isReady()) {
+        output = await this.session.exec(fullCode);
       } else {
+        // Try to start session in background for next run
+        void this.session.start().catch(() => { /* will retry next run */ });
         output = await this.execJulia(fullCode);
       }
 
-      // Show first meaningful output line inline
       const displayLine = output.split('\n')
         .find((l) => l.trim() && !l.startsWith('__sciml_'));
       this.showResult(editor, endLine, displayLine ?? '(no output)', false);
 
-      // Update variable inspector panel
       const vars = parseVariables(output);
       VariableInspector.show(context, vars);
 
-      // Show plot if one was saved
       const pPath = parsePlotPath(output);
       if (pPath) PlotViewer.show(context, pPath);
 
@@ -147,6 +146,7 @@ export class JuliaRunner {
     this.outputDec.dispose();
     this.errorDec.dispose();
     this.runningDec.dispose();
+    this.session.dispose();
   }
 
   // ─── Block detection ────────────────────────────────────────────────────────
