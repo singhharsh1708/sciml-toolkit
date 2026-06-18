@@ -2,7 +2,7 @@
   "name": "sciml-toolkit",
   "displayName": "SciML Toolkit",
   "description": "Julia SciML toolkit: equation preview, inline code execution, and benchmark runner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "harsh",
   "license": "MIT",
   "repository": {
