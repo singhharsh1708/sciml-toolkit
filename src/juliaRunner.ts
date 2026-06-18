@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import { BenchmarkPanel, buildBenchmarkScript, parseBenchmarkOutput } from './benchmarkPanel';
+import { VariableInspector, VAR_INSPECT_SUFFIX, parseVariables } from './variableInspector';
+import { PlotViewer, buildPlotSuffix, tempPlotPath, parsePlotPath } from './plotViewer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +64,7 @@ export class JuliaRunner {
 
   // ─── Public commands ────────────────────────────────────────────────────────
 
-  async runBlock(editor: vscode.TextEditor) {
+  async runBlock(editor: vscode.TextEditor, context: vscode.ExtensionContext) {
     const { code, endLine } = this.getBlock(editor);
     if (!code.trim()) {
       void vscode.window.showInformationMessage('SciML: cursor is not inside a code block.');
@@ -71,18 +73,33 @@ export class JuliaRunner {
 
     this.setRunning(editor, endLine);
     try {
-      // Prefer the julia-vscode REPL if available; fall back to subprocess
+      const plotPath = tempPlotPath();
+      // Append variable inspector + plot capture suffixes
+      const fullCode = code + '\n' + VAR_INSPECT_SUFFIX + '\n' + buildPlotSuffix(plotPath);
+
       const config = vscode.workspace.getConfiguration('sciml');
       const useRepl: boolean = config.get('useExistingRepl') ?? true;
       let output: string;
 
       if (useRepl && (await this.juliaVscodeReplAvailable())) {
-        output = await this.runViaRepl(code);
+        output = await this.runViaRepl(fullCode);
       } else {
-        output = await this.execJulia(code);
+        output = await this.execJulia(fullCode);
       }
 
-      this.showResult(editor, endLine, output, false);
+      // Show first meaningful output line inline
+      const displayLine = output.split('\n')
+        .find((l) => l.trim() && !l.startsWith('__sciml_'));
+      this.showResult(editor, endLine, displayLine ?? '(no output)', false);
+
+      // Update variable inspector panel
+      const vars = parseVariables(output);
+      VariableInspector.show(context, vars);
+
+      // Show plot if one was saved
+      const pPath = parsePlotPath(output);
+      if (pPath) PlotViewer.show(context, pPath);
+
     } catch (err: unknown) {
       this.showResult(editor, endLine, errorMessage(err), true);
     }
