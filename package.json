@@ -7,10 +7,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/harshsingh-io/sciml-toolkit"
+    "url": "https://github.com/singhharsh1708/sciml-toolkit"
   },
-  "homepage": "https://github.com/harshsingh-io/sciml-toolkit#readme",
-  "bugs": { "url": "https://github.com/harshsingh-io/sciml-toolkit/issues" },
+  "homepage": "https://github.com/singhharsh1708/sciml-toolkit#readme",
+  "bugs": { "url": "https://github.com/singhharsh1708/sciml-toolkit/issues" },
   "keywords": ["julia", "sciml", "differential equations", "benchmarks", "latex", "math"],
   "engines": { "vscode": "^1.95.0" },
   "categories": ["Other", "Notebooks", "Visualization"],
