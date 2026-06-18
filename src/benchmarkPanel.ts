@@ -46,11 +46,14 @@ export class BenchmarkPanel {
 export function buildBenchmarkScript(code: string): string {
   // We emit a structured block the parser can reliably extract.
   // All time values from BenchmarkTools are in nanoseconds (Float64).
+  // __sciml_installing__ sentinel lets the runner update the status bar.
   return `
 import Pkg
 try
   using BenchmarkTools
 catch
+  println("__sciml_installing__")
+  flush(stdout)
   Pkg.add("BenchmarkTools")
   using BenchmarkTools
 end
