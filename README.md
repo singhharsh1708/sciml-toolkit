@@ -48,6 +48,8 @@ Opens a live-updating side panel that renders all LaTeX math found in the file u
 | Clear all inline outputs | Command Palette → *SciML: Clear All Outputs* | same |
 
 > All commands are only active when a `.jl` file is open in the editor.
+>
+> **Keybinding conflicts:** `Ctrl+Shift+M` (Preview Equations) overlaps VS Code's built-in **Toggle Minimap** shortcut. If it doesn't fire, open *Keyboard Shortcuts* (`Ctrl+K Ctrl+S`) and rebind either command.
 
 ## Requirements
 

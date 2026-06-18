@@ -96,15 +96,25 @@ export class JuliaRunner {
     }
 
     this.setRunning(editor, endLine);
+    const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    status.text = '$(sync~spin) SciML: Benchmarking…';
+    status.show();
+
     try {
       const script = buildBenchmarkScript(code);
-      const raw = await this.execJulia(script, 120_000);
+      const raw = await this.execJuliaWithProgress(script, 120_000, (line) => {
+        if (line.includes('__sciml_installing__')) {
+          status.text = '$(sync~spin) SciML: Installing BenchmarkTools… (first run only)';
+        }
+      });
       const result = parseBenchmarkOutput(raw);
       const summary = `median ${formatNs(result.median_ns)}  allocs ${result.allocs}`;
       this.showResult(editor, endLine, summary, false);
       BenchmarkPanel.show(context, result, code.trim().split('\n')[0]);
     } catch (err: unknown) {
       this.showResult(editor, endLine, errorMessage(err), true);
+    } finally {
+      status.dispose();
     }
   }
 
@@ -188,6 +198,56 @@ export class JuliaRunner {
   }
 
   // ─── Julia subprocess ───────────────────────────────────────────────────────
+
+  // Like execJulia but calls onLine for each stdout line as it arrives,
+  // allowing the caller to react to progress sentinels mid-run.
+  private execJuliaWithProgress(
+    code: string,
+    timeoutMs: number,
+    onLine: (line: string) => void
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const config = vscode.workspace.getConfiguration('sciml');
+      const juliaPath: string = config.get('juliaPath') ?? 'julia';
+
+      const proc: ChildProcessWithoutNullStreams = spawn(juliaPath, [
+        '--startup-file=no',
+        '--color=no',
+        '-e', code,
+      ]);
+
+      let stdout = '';
+      let stderr = '';
+      let lineBuffer = '';
+
+      proc.stdout.on('data', (d: Buffer) => {
+        const chunk = d.toString();
+        stdout += chunk;
+        lineBuffer += chunk;
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop() ?? '';
+        for (const line of lines) onLine(line);
+      });
+      proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+
+      const timer = setTimeout(() => {
+        proc.kill();
+        reject(new Error(`Julia timed out after ${timeoutMs / 1000}s`));
+      }, timeoutMs);
+
+      proc.on('close', (code) => {
+        clearTimeout(timer);
+        if (code === 0) {
+          resolve(stdout.trim() || '(no output)');
+        } else {
+          const errLine = stderr.trim().split('\n').filter(Boolean).pop() ?? stderr.trim();
+          reject(new Error(errLine || `Julia exited ${code}`));
+        }
+      });
+
+      proc.on('error', (err) => { clearTimeout(timer); reject(err); });
+    });
+  }
 
   private execJulia(code: string, timeoutMs = 60_000): Promise<string> {
     return new Promise((resolve, reject) => {
